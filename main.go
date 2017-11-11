@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	nodeURL = flag.String("node-url", "/ip4/127.0.0.1/tcp/5001/", "IPFS node URL")
+	nodeURL = flag.String("node-addr", "/ip4/127.0.0.1/tcp/5001/", "IPFS node URL")
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 
 	path := flag.Arg(0)
 	if path == "" {
-		log.Fatal("Usage: ipfs-sync --node-url=multiaddr <directory>")
+		log.Fatal("Usage: ipfs-sync --node-addr=multiaddr <directory>")
 	}
 
 	snc, err := sync.Watch(*nodeURL, path)
