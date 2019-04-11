@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/howeyc/fsnotify"
+	"github.com/farmergreg/rfsnotify"
 
 	"github.com/ipfn/ipfs-sync/shell"
 )
@@ -15,15 +15,15 @@ type Synchronizer struct {
 	hash string
 
 	ops    *Ops
-	watch  *fsnotify.Watcher
+	watch  *rfsnotify.RWatcher
 	events chan string
 }
 
 // Watch - Constructs new IPFS synchronizer for a directory.
 func Watch(url, path string) (sync *Synchronizer, err error) {
-	watch, err := fsnotify.NewWatcher()
+	watch, err := rfsnotify.NewWatcher()
 	if err != nil {
-		return nil, fmt.Errorf("fsnotify: %v", err)
+		return nil, fmt.Errorf("rfsnotify: %v", err)
 	}
 
 	sync = &Synchronizer{
@@ -34,17 +34,18 @@ func Watch(url, path string) (sync *Synchronizer, err error) {
 		watch: watch,
 	}
 
-	err = sync.watch.Watch(path)
-	if err != nil {
-		return nil, fmt.Errorf("watch %q: %v", path, err)
-	}
-
 	sync.hash, err = shell.Add(path)
 	if err != nil {
 		return nil, fmt.Errorf("ipfs add %q: %v", path, err)
 	}
 
 	go sync.watchForEvents()
+
+	err = sync.watch.AddRecursive(path)
+	if err != nil {
+		return nil, fmt.Errorf("watch %q: %v", path, err)
+	}
+
 	return
 }
 
@@ -69,7 +70,7 @@ func (sync *Synchronizer) Close() (err error) {
 func (sync *Synchronizer) watchForEvents() {
 	for {
 		select {
-		case ev := <-sync.watch.Event:
+		case ev := <-sync.watch.Events:
 			hash, err := sync.ops.Handle(sync.hash, ev)
 			if err != nil {
 				log.Println("error:", err)
@@ -80,7 +81,7 @@ func (sync *Synchronizer) watchForEvents() {
 			if hash != "" {
 				sync.hash = hash
 			}
-		case err := <-sync.watch.Error:
+		case err := <-sync.watch.Errors:
 			log.Println("error:", err)
 		}
 	}

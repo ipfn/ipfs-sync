@@ -2,34 +2,37 @@ package sync
 
 import (
 	"errors"
+	"log"
 	"path/filepath"
 	"strings"
 
-	"github.com/howeyc/fsnotify"
+	fsnotify "gopkg.in/fsnotify.v1"
+
 	"github.com/ipfn/ipfs-sync/shell"
 )
 
 // Ops - Sync ops.
 type Ops struct {
-	base string
+	base    string
+	verbose bool
 }
 
 // Handle - Handles file system notification.
-func (ops *Ops) Handle(last string, event *fsnotify.FileEvent) (hash string, err error) {
+func (ops *Ops) Handle(last string, event fsnotify.Event) (hash string, err error) {
 	path := cleanPath(ops.base, event.Name)
-	if event.IsAttrib() {
-		return
+	if ops.verbose {
+		log.Printf("path: %s;%s (%s)", last, path, eventType(event))
 	}
-	if event.IsCreate() {
+	if event.Op&fsnotify.Create == fsnotify.Create {
 		return ops.Create(last, path)
 	}
-	if event.IsDelete() {
-		return ops.Delete(last, path)
+	if event.Op&fsnotify.Remove == fsnotify.Remove {
+		return ops.Remove(last, path)
 	}
-	if event.IsModify() {
-		return ops.Modify(last, path)
+	if event.Op&fsnotify.Write == fsnotify.Write {
+		return ops.Write(last, path)
 	}
-	if event.IsRename() {
+	if event.Op&fsnotify.Rename == fsnotify.Rename {
 		return ops.Rename(last, path)
 	}
 	err = errors.New("unknown error type")
@@ -45,13 +48,13 @@ func (ops *Ops) Create(last string, path string) (hash string, err error) {
 	return shell.AddLink(last, path, item)
 }
 
-// Delete - Delete event operation.
-func (ops *Ops) Delete(last string, path string) (hash string, err error) {
+// Remove - Remove event operation.
+func (ops *Ops) Remove(last string, path string) (hash string, err error) {
 	return shell.RmLink(last, path)
 }
 
-// Modify - Modify event operation.
-func (ops *Ops) Modify(last string, path string) (hash string, err error) {
+// Write - Write event operation.
+func (ops *Ops) Write(last string, path string) (hash string, err error) {
 	item, err := shell.Add(filepath.Join(ops.base, path))
 	if err != nil {
 		return
@@ -65,6 +68,23 @@ func (ops *Ops) Rename(last string, path string) (hash string, err error) {
 }
 
 func cleanPath(base, path string) string {
+	path = strings.ReplaceAll(path, "\\", "/")
 	path = strings.TrimPrefix(path, base)
 	return strings.TrimPrefix(path, "/")
+}
+
+func eventType(event fsnotify.Event) string {
+	if event.Op&fsnotify.Create == fsnotify.Create {
+		return "Create"
+	}
+	if event.Op&fsnotify.Remove == fsnotify.Remove {
+		return "Remove"
+	}
+	if event.Op&fsnotify.Write == fsnotify.Write {
+		return "Write"
+	}
+	if event.Op&fsnotify.Rename == fsnotify.Rename {
+		return "Rename"
+	}
+	return "Unknown"
 }
