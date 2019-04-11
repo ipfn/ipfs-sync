@@ -22,7 +22,7 @@ func main() {
 
 	snc, err := sync.Watch(*nodeURL, path)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("watch error: %v", err)
 	}
 
 	fmt.Println(snc.Hash())

@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/howeyc/fsnotify"
@@ -22,7 +23,7 @@ type Synchronizer struct {
 func Watch(url, path string) (sync *Synchronizer, err error) {
 	watch, err := fsnotify.NewWatcher()
 	if err != nil {
-		return
+		return nil, fmt.Errorf("fsnotify: %v", err)
 	}
 
 	sync = &Synchronizer{
@@ -35,12 +36,12 @@ func Watch(url, path string) (sync *Synchronizer, err error) {
 
 	err = sync.watch.Watch(path)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("watch %q: %v", path, err)
 	}
 
 	sync.hash, err = shell.Add(path)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("ipfs add %q: %v", path, err)
 	}
 
 	go sync.watchForEvents()

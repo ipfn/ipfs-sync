@@ -1,17 +1,27 @@
 package shell
 
 import (
+	"bytes"
+	"fmt"
 	"os/exec"
 	"strings"
 )
 
 // Exec - Executes IPFS command.
 func Exec(args ...string) (hash string, err error) {
-	output, err := exec.Command("ipfs", args...).Output()
+	cmd := exec.Command("ipfs", args...)
+	var (
+		stdout bytes.Buffer
+		stderr bytes.Buffer
+	)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
 	if err != nil {
+		err = fmt.Errorf("%v: %q", err, strings.TrimSpace(string(stderr.Bytes())))
 		return
 	}
-	return strings.TrimSpace(string(output)), nil
+	return strings.TrimSpace(string(stdout.Bytes())), nil
 }
 
 // Add - Adds directory to IPFS and returns its hash.
