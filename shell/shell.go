@@ -26,9 +26,26 @@ func Exec(args ...string) (hash string, err error) {
 	return strings.TrimSpace(string(stdout.Bytes())), nil
 }
 
+// AddOptions - IPFS shell `add` command options.
+type AddOptions struct {
+	// Ignore - List of paths to ignore.
+	Ignore []string
+	// IgnoreRulesPath - Path of `.gitignore` file or similar.
+	IgnoreRulesPath string
+}
+
 // Add - Adds directory to IPFS and returns its hash.
-func Add(path string) (string, error) {
-	return Exec("add", "-Q", "-r", path)
+func Add(opts *AddOptions, path string) (string, error) {
+	args := []string{"add", "-Q", "-H", "-r"}
+	if len(opts.IgnoreRulesPath) != 0 {
+		args = append(args, fmt.Sprintf("--ignore-rules-path=%s", opts.IgnoreRulesPath))
+	}
+	if len(opts.Ignore) != 0 {
+		for _, arg := range opts.Ignore {
+			args = append(args, fmt.Sprintf("--ignore=%s", arg))
+		}
+	}
+	return Exec(append(args, path)...)
 }
 
 // RmLink - Removes link from IPFS object and returns new hash.

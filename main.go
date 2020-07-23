@@ -8,14 +8,27 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
+	"github.com/ipfn/ipfs-sync/shell"
 	"github.com/ipfn/ipfs-sync/sync"
 )
 
 var (
 	verbose = flag.Bool("verbose", false, "Print logs to stderr")
 	nodeURL = flag.String("node-addr", "/ip4/127.0.0.1/tcp/5001/", "IPFS node URL")
+
+	// Ignore .git and .gitignore files by default
+	git = flag.Bool("git", true, "Ignores files from .gitignore and .git directory itself.")
+
+	// IPFS ignore rules
+	ignore          stringList
+	ignoreRulesPath = flag.String("ignore-rules-path", "", "Ignores files from .gitignore.")
 )
+
+func init() {
+	flag.Var(&ignore, "ignore", "List of paths to ignore.")
+}
 
 func main() {
 	flag.Parse()
@@ -48,7 +61,18 @@ func main() {
 		log.Fatal("Error: ipfs was not found in $PATH")
 	}
 
-	snc, err := sync.Watch(*nodeURL, path)
+	if *git {
+		// Since --git is true by default we only respect --ignore-rules-path flag.
+		if len(*ignoreRulesPath) == 0 {
+			*ignoreRulesPath = ".gitignore"
+		}
+		ignore = append(ignore, ".git")
+	}
+
+	snc, err := sync.Watch(*nodeURL, path, shell.AddOptions{
+		Ignore:          ignore,
+		IgnoreRulesPath: *ignoreRulesPath,
+	})
 	if err != nil {
 		log.Fatalf("watch error: %v", err)
 	}
@@ -58,4 +82,15 @@ func main() {
 	for hash := range snc.Events() {
 		fmt.Println(hash)
 	}
+}
+
+type stringList []string
+
+func (i *stringList) String() string {
+	return strings.Join(*i, ", ")
+}
+
+func (i *stringList) Set(value string) error {
+	*i = append(*i, value)
+	return nil
 }

@@ -3,6 +3,7 @@ package sync
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/farmergreg/rfsnotify"
 
@@ -20,7 +21,7 @@ type Synchronizer struct {
 }
 
 // Watch - Constructs new IPFS synchronizer for a directory.
-func Watch(url, path string) (sync *Synchronizer, err error) {
+func Watch(url, path string, opts shell.AddOptions) (sync *Synchronizer, err error) {
 	watch, err := rfsnotify.NewWatcher()
 	if err != nil {
 		return nil, fmt.Errorf("rfsnotify: %v", err)
@@ -29,12 +30,13 @@ func Watch(url, path string) (sync *Synchronizer, err error) {
 	sync = &Synchronizer{
 		path: path,
 		ops: &Ops{
-			base: path,
+			base: strings.ReplaceAll(path, "\\", "/"),
+			opts: opts,
 		},
 		watch: watch,
 	}
 
-	sync.hash, err = shell.Add(path)
+	sync.hash, err = shell.Add(&sync.ops.opts, path)
 	if err != nil {
 		return nil, fmt.Errorf("ipfs add %q: %v", path, err)
 	}

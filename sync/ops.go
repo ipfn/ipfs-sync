@@ -2,6 +2,7 @@ package sync
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"path/filepath"
 	"strings"
@@ -14,11 +15,18 @@ import (
 // Ops - Sync ops.
 type Ops struct {
 	base string
+	opts shell.AddOptions
 }
 
 // Handle - Handles file system notification.
 func (ops *Ops) Handle(last string, event fsnotify.Event) (hash string, err error) {
 	path := cleanPath(ops.base, event.Name)
+	for _, ignored := range ops.opts.Ignore {
+		dirpath := fmt.Sprintf("%s/", ignored)
+		if path == ignored || path == dirpath || strings.HasPrefix(path, dirpath) {
+			return last, nil
+		}
+	}
 	log.Printf("File event: %s;%s (%s)", last, path, eventType(event))
 	if event.Op&fsnotify.Create == fsnotify.Create {
 		return ops.Create(last, path)
@@ -38,7 +46,7 @@ func (ops *Ops) Handle(last string, event fsnotify.Event) (hash string, err erro
 
 // Create - Create event operation.
 func (ops *Ops) Create(last string, path string) (hash string, err error) {
-	item, err := shell.Add(filepath.Join(ops.base, path))
+	item, err := shell.Add(&ops.opts, filepath.Join(ops.base, path))
 	if err != nil {
 		return
 	}
@@ -52,7 +60,7 @@ func (ops *Ops) Remove(last string, path string) (hash string, err error) {
 
 // Write - Write event operation.
 func (ops *Ops) Write(last string, path string) (hash string, err error) {
-	item, err := shell.Add(filepath.Join(ops.base, path))
+	item, err := shell.Add(&ops.opts, filepath.Join(ops.base, path))
 	if err != nil {
 		return
 	}
