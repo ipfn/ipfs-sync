@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/ipfn/ipfs-sync/sync"
 )
@@ -28,6 +29,20 @@ func main() {
 	if path == "" {
 		log.Fatal("Usage: ipfs-sync --node-addr=multiaddr <directory>")
 	}
+
+	if path == "." {
+		var err error
+		if path, err = os.Getwd(); err != nil {
+			log.Fatalf("getwd: %v", err)
+		}
+	} else {
+		var err error
+		if path, err = filepath.Abs(path); err != nil {
+			log.Fatalf("path error: %v", err)
+		}
+	}
+
+	log.Printf("Starting in %s", path)
 
 	if _, err := exec.LookPath("ipfs"); err != nil {
 		log.Fatal("Error: ipfs was not found in $PATH")
