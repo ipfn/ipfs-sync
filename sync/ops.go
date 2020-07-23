@@ -13,16 +13,13 @@ import (
 
 // Ops - Sync ops.
 type Ops struct {
-	base    string
-	verbose bool
+	base string
 }
 
 // Handle - Handles file system notification.
 func (ops *Ops) Handle(last string, event fsnotify.Event) (hash string, err error) {
 	path := cleanPath(ops.base, event.Name)
-	if ops.verbose {
-		log.Printf("path: %s;%s (%s)", last, path, eventType(event))
-	}
+	log.Printf("File event: %s;%s (%s)", last, path, eventType(event))
 	if event.Op&fsnotify.Create == fsnotify.Create {
 		return ops.Create(last, path)
 	}

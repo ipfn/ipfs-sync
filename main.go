@@ -3,18 +3,26 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 
 	"github.com/ipfn/ipfs-sync/sync"
 )
 
 var (
+	verbose = flag.Bool("verbose", false, "Print logs to stderr")
 	nodeURL = flag.String("node-addr", "/ip4/127.0.0.1/tcp/5001/", "IPFS node URL")
 )
 
 func main() {
 	flag.Parse()
+	if *verbose {
+		log.SetOutput(os.Stderr)
+	} else {
+		log.SetOutput(ioutil.Discard)
+	}
 
 	path := flag.Arg(0)
 	if path == "" {

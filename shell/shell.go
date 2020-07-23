@@ -3,12 +3,14 @@ package shell
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os/exec"
 	"strings"
 )
 
 // Exec - Executes IPFS command.
 func Exec(args ...string) (hash string, err error) {
+	log.Printf("Exec: ipfs %s", strings.Join(args, " "))
 	cmd := exec.Command("ipfs", args...)
 	var (
 		stdout bytes.Buffer
