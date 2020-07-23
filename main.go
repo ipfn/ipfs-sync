@@ -61,7 +61,8 @@ func main() {
 		log.Fatal("Error: ipfs was not found in $PATH")
 	}
 
-	if *git {
+	_, err := os.Stat(".gitignore")
+	if *git && !os.IsNotExist(err) {
 		// Since --git is true by default we only respect --ignore-rules-path flag.
 		if len(*ignoreRulesPath) == 0 {
 			*ignoreRulesPath = ".gitignore"
