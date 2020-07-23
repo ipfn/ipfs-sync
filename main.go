@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os/exec"
 
 	"github.com/ipfn/ipfs-sync/sync"
 )
@@ -18,6 +19,10 @@ func main() {
 	path := flag.Arg(0)
 	if path == "" {
 		log.Fatal("Usage: ipfs-sync --node-addr=multiaddr <directory>")
+	}
+
+	if _, err := exec.LookPath("ipfs"); err != nil {
+		log.Fatal("Error: ipfs was not found in $PATH")
 	}
 
 	snc, err := sync.Watch(*nodeURL, path)
