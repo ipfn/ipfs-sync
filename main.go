@@ -17,6 +17,8 @@ import (
 var (
 	verbose = flag.Bool("verbose", false, "Print logs to stderr")
 	nodeURL = flag.String("node-addr", "/ip4/127.0.0.1/tcp/5001/", "IPFS node URL")
+	publish = flag.Bool("publish", false, "Option to publish to IPNS")
+	key     = flag.String("key", "", "key to publish to publish to IPNS")
 
 	// Ignore .git and .gitignore files by default
 	git = flag.Bool("git", true, "Ignores files from .gitignore and .git directory itself.")
@@ -39,6 +41,9 @@ func main() {
 	}
 
 	path := flag.Arg(0)
+	if *key == "" {
+		*key = "self"
+	}
 	if path == "" {
 		log.Fatal("Usage: ipfs-sync --node-addr=multiaddr <directory>")
 	}
@@ -78,11 +83,28 @@ func main() {
 		log.Fatalf("watch error: %v", err)
 	}
 
-	fmt.Println(snc.Hash())
+	var cmd *exec.Cmd
+	cmd = checkPublish(cmd, snc.Hash(), true)
 
 	for hash := range snc.Events() {
+		cmd = checkPublish(cmd, hash, false)
+	}
+}
+
+func checkPublish(cmd *exec.Cmd, hash string, printLogs bool) *exec.Cmd {
+	var err error
+	if *publish && hash != "" {
+		cmd, err = shell.Publish(cmd, hash, *key)
+		if err != nil {
+			fmt.Printf("Publish error: %s\n", err.Error())
+			os.Exit(1)
+		} else if printLogs {
+			fmt.Printf("Publishing to key %s\n", *key)
+		}
+	} else if !*publish {
 		fmt.Println(hash)
 	}
+	return cmd
 }
 
 type stringList []string
