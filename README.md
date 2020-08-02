@@ -21,6 +21,20 @@ $ go get -u github.com/ipfn/ipfs-sync
 $ ipfs-sync --node-addr=multiaddr <directory>
 ```
 
+Publish to IPNS
+```console
+$ ipfs-sync --node-addr=multiaddr --ipns-key=QmdZ... <directory>
+```
+
+You can also specify name of the key. 
+```console
+$ ipfs-sync --node-addr=multiaddr --ipns-key=testKey <directory>
+```
+
+You can also specify --key=self to publish to self key of IPNS.
+```console
+$ ipfs-sync --node-addr=multiaddr --ipns-key=self <directory>
+```
 ## License
 
                                  Apache License

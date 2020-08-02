@@ -2,11 +2,15 @@ package shell
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"os/exec"
 	"strings"
+	"sync"
 )
+
+var once sync.Once
 
 // Exec - Executes IPFS command.
 func Exec(args ...string) (hash string, err error) {
@@ -56,4 +60,40 @@ func RmLink(last, path string) (string, error) {
 // AddLink - Creates link from IPFS object and returns new hash.
 func AddLink(last, path, hash string) (string, error) {
 	return Exec("object", "patch", "add-link", last, path, hash)
+}
+
+func keyExists(key string) bool {
+	keys, err := Exec("key", "list", "-l")
+	if err != nil {
+		return false
+	}
+	for _, line := range strings.Split(keys, "\n") {
+		for _, keyName := range strings.Split(line, " ") {
+			if keyName != "" && keyName == key {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Publish - Publishes the ipfs hash to the provided ipns key
+func Publish(key string, ch <-chan string) (string, error) {
+	if !keyExists(key) {
+		return "", fmt.Errorf("key %s deoesn't exist", key)
+	}
+	go func() {
+		var ctx context.Context
+		var cancel context.CancelFunc
+		for {
+			hash := <-ch
+			if cancel != nil {
+				cancel()
+			}
+			ctx, cancel = context.WithCancel(context.Background())
+			defer cancel()
+			exec.CommandContext(ctx, "ipfs", "name", "publish", fmt.Sprintf("--key=%s", key), hash).Start()
+		}
+	}()
+	return fmt.Sprintf("Publishing to key: %s", key), nil
 }

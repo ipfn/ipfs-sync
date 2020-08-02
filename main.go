@@ -17,6 +17,7 @@ import (
 var (
 	verbose = flag.Bool("verbose", false, "Print logs to stderr")
 	nodeURL = flag.String("node-addr", "/ip4/127.0.0.1/tcp/5001/", "IPFS node URL")
+	ipnsKey = flag.String("ipns-key", "", "key to publish to IPNS")
 
 	// Ignore .git and .gitignore files by default
 	git = flag.Bool("git", true, "Ignores files from .gitignore and .git directory itself.")
@@ -78,10 +79,22 @@ func main() {
 		log.Fatalf("watch error: %v", err)
 	}
 
-	fmt.Println(snc.Hash())
-
-	for hash := range snc.Events() {
-		fmt.Println(hash)
+	if *ipnsKey == "" {
+		fmt.Println(snc.Hash())
+		for hash := range snc.Events() {
+			fmt.Println(hash)
+		}
+	} else {
+		hashCh := make(chan string)
+		msg, err := shell.Publish(*ipnsKey, hashCh)
+		if err != nil {
+			log.Fatalf("Publish error: %s\n", err)
+		}
+		fmt.Println(msg)
+		hashCh <- snc.Hash()
+		for hash := range snc.Events() {
+			hashCh <- hash
+		}
 	}
 }
 
