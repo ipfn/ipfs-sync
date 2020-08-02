@@ -77,7 +77,7 @@ func (sync *Synchronizer) watchForEvents() {
 			if err != nil {
 				log.Println("error:", err)
 			}
-			if sync.events != nil && sync.hash != hash {
+			if sync.events != nil && sync.hash != hash && hash != "" {
 				sync.events <- hash
 			}
 			if hash != "" {

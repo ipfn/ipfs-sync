@@ -80,8 +80,6 @@ func keyExists(key string) bool {
 
 // Publish - Publishes the ipfs hash to the provided ipns key
 func Publish(key string) chan string {
-	var ctx context.Context
-	var cancel context.CancelFunc
 	if key != "" {
 		if !keyExists(key) {
 			fmt.Printf("Publish error: key %s deoesn't exist\n", key)
@@ -93,23 +91,23 @@ func Publish(key string) chan string {
 
 	ch := make(chan string)
 	go func() {
+		var ctx context.Context
+		var cancel context.CancelFunc
 		for {
-			if hash := <-ch; hash != "" {
-				if key != "" {
-					if cancel != nil {
-						cancel()
-					}
-					ctx, cancel = context.WithCancel(context.Background())
-					defer cancel()
-					err := exec.CommandContext(ctx, "ipfs", "name", "publish", fmt.Sprintf("--key=%s", key), hash).Start()
-					if err != nil {
-						log.Fatalf("Publish error: %s", err.Error())
-					}
-				} else {
-					fmt.Println(hash)
+			hash := <-ch
+			if key != "" {
+				if cancel != nil {
+					cancel()
 				}
+				ctx, cancel = context.WithCancel(context.Background())
+				defer cancel()
+				err := exec.CommandContext(ctx, "ipfs", "name", "publish", fmt.Sprintf("--key=%s", key), hash).Start()
+				if err != nil {
+					log.Fatalf("Publish error: %s", err.Error())
+				}
+			} else {
+				fmt.Println(hash)
 			}
-
 		}
 	}()
 	return ch
