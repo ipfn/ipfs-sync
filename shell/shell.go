@@ -11,8 +11,6 @@ import (
 	"sync"
 )
 
-var once sync.Once
-
 // Exec - Executes IPFS command.
 func Exec(args ...string) (hash string, err error) {
 	log.Printf("Exec: ipfs %s", strings.Join(args, " "))
