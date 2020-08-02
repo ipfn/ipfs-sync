@@ -23,7 +23,7 @@ $ ipfs-sync --node-addr=multiaddr <directory>
 
 Publish to IPNS
 ```console
-$ ipfs-sync --node-addr=multiaddr --key=QmdZ... <directory>
+$ ipfs-sync --node-addr=multiaddr --ipns-key=QmdZ... <directory>
 ```
 
 You can also specify name of the key. 
