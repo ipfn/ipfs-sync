@@ -64,10 +64,8 @@ func keyExists(key string) bool {
 	if err != nil {
 		return false
 	}
-	lines := strings.Split(keys, "\n")
-	for _, line := range lines {
-		keyNames := strings.Split(line, " ")
-		for _, keyName := range keyNames {
+	for _, line := range strings.Split(keys, "\n") {
+		for _, keyName := range strings.Split(line, " ") {
 			if keyName != "" && keyName == key {
 				return true
 			}

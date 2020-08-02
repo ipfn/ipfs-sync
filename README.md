@@ -23,17 +23,17 @@ $ ipfs-sync --node-addr=multiaddr <directory>
 
 Publish to IPNS
 ```console
-$ ipfs-sync --node-addr=multiaddr --publish=true --key=QmdZjqVMbATh1YVdbtZA9j9aVkGKUXjM4aCHAT6yGiPY9R <directory>
+$ ipfs-sync --node-addr=multiaddr --key=QmdZ... <directory>
 ```
 
 You can also specify name of the key. 
 ```console
-$ ipfs-sync --node-addr=multiaddr --publish=true --key=testKey <directory>
+$ ipfs-sync --node-addr=multiaddr --ipns-key=testKey <directory>
 ```
 
-If key is not specified, self key will be used by default. 
+You can also specify --key=self to publish to self key of IPNS.
 ```console
-$ ipfs-sync --node-addr=multiaddr --publish=true <directory>
+$ ipfs-sync --node-addr=multiaddr --ipns-key=self <directory>
 ```
 ## License
 
