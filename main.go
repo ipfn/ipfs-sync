@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -40,7 +39,6 @@ func main() {
 	}
 
 	path := flag.Arg(0)
-
 	if path == "" {
 		log.Fatal("Usage: ipfs-sync --node-addr=multiaddr <directory>")
 	}
@@ -80,28 +78,11 @@ func main() {
 		log.Fatalf("watch error: %v", err)
 	}
 
-	var cmd *exec.Cmd
-	cmd = checkPublish(cmd, snc.Hash(), true)
-
+	hashCh := shell.Publish(*ipnsKey)
+	hashCh <- snc.Hash()
 	for hash := range snc.Events() {
-		cmd = checkPublish(cmd, hash, false)
+		hashCh <- hash
 	}
-}
-
-func checkPublish(cmd *exec.Cmd, hash string, printLogs bool) *exec.Cmd {
-	var err error
-	if *ipnsKey != "" && hash != "" {
-		cmd, err = shell.Publish(cmd, hash, *ipnsKey)
-		if err != nil {
-			fmt.Printf("Publish error: %s\n", err.Error())
-			os.Exit(1)
-		} else if printLogs {
-			fmt.Printf("Publishing to key %s\n", *ipnsKey)
-		}
-	} else if *ipnsKey == "" && hash != "" {
-		fmt.Println(hash)
-	}
-	return cmd
 }
 
 type stringList []string

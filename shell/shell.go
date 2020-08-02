@@ -2,12 +2,16 @@ package shell
 
 import (
 	"bytes"
-	"errors"
+	"context"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
+	"sync"
 )
+
+var once sync.Once
 
 // Exec - Executes IPFS command.
 func Exec(args ...string) (hash string, err error) {
@@ -75,18 +79,34 @@ func keyExists(key string) bool {
 }
 
 // Publish - Publishes the ipfs hash to the provided ipns key
-func Publish(cmd *exec.Cmd, hash, key string) (*exec.Cmd, error) {
-	if !keyExists(key) {
-		return nil, errors.New("Key does not exist")
-	}
-	if cmd != nil {
-		cmd.Process.Kill()
+func Publish(key string) chan string {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if key != "" && !keyExists(key) {
+		fmt.Printf("Publish error: key %s deoesn't exist\n", key)
+		os.Exit(1)
+	} else if key != "" {
+		fmt.Printf("Publishing to key: %s\n", key)
 	}
 
-	cmd = exec.Command("ipfs", "name", "publish", hash)
-	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
-	}
-	go func() { cmd.Wait() }()
-	return cmd, nil
+	ch := make(chan string)
+	go func() {
+		for {
+			select {
+			case hash := <-ch:
+				if key != "" && hash != "" {
+					cancel()
+					ctx, cancel = context.WithCancel(context.Background())
+					err := exec.CommandContext(ctx, "ipfs", "name", "publish", "--key="+key, hash).Start()
+					if err != nil {
+						log.Fatalf("Publish error: %s\n", err.Error())
+					}
+				} else if key == "" && hash != "" {
+					fmt.Println(hash)
+				}
+
+			}
+		}
+	}()
+	return ch
 }
