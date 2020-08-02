@@ -11,6 +11,8 @@ import (
 	"sync"
 )
 
+var once sync.Once
+
 // Exec - Executes IPFS command.
 func Exec(args ...string) (hash string, err error) {
 	log.Printf("Exec: ipfs %s", strings.Join(args, " "))
@@ -78,32 +80,36 @@ func keyExists(key string) bool {
 
 // Publish - Publishes the ipfs hash to the provided ipns key
 func Publish(key string) chan string {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	if key != "" && !keyExists(key) {
-		fmt.Printf("Publish error: key %s deoesn't exist\n", key)
-		os.Exit(1)
-	} else if key != "" {
-		fmt.Printf("Publishing to key: %s\n", key)
+	var ctx context.Context
+	var cancel context.CancelFunc
+	if key != "" {
+		if !keyExists(key) {
+			fmt.Printf("Publish error: key %s deoesn't exist\n", key)
+			os.Exit(1)
+		} else {
+			log.Printf("Publishing to key: %s", key)
+		}
 	}
 
 	ch := make(chan string)
 	go func() {
 		for {
-			select {
-			case hash := <-ch:
-				if key != "" && hash != "" {
-					cancel()
-					ctx, cancel = context.WithCancel(context.Background())
-					err := exec.CommandContext(ctx, "ipfs", "name", "publish", "--key="+key, hash).Start()
-					if err != nil {
-						log.Fatalf("Publish error: %s\n", err.Error())
+			if hash := <-ch; hash != "" {
+				if key != "" {
+					if cancel != nil {
+						cancel()
 					}
-				} else if key == "" && hash != "" {
+					ctx, cancel = context.WithCancel(context.Background())
+					defer cancel()
+					err := exec.CommandContext(ctx, "ipfs", "name", "publish", fmt.Sprintf("--key=%s", key), hash).Start()
+					if err != nil {
+						log.Fatalf("Publish error: %s", err.Error())
+					}
+				} else {
 					fmt.Println(hash)
 				}
-
 			}
+
 		}
 	}()
 	return ch
