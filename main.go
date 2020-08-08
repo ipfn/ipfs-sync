@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -78,10 +79,22 @@ func main() {
 		log.Fatalf("watch error: %v", err)
 	}
 
-	hashCh := shell.Publish(*ipnsKey)
-	hashCh <- snc.Hash()
-	for hash := range snc.Events() {
-		hashCh <- hash
+	if *ipnsKey == "" {
+		fmt.Println(snc.Hash())
+		for hash := range snc.Events() {
+			fmt.Println(hash)
+		}
+	} else {
+		hashCh := make(chan string)
+		msg, err := shell.Publish(*ipnsKey, hashCh)
+		if err != nil {
+			log.Fatalf("Publish error: %s\n", err)
+		}
+		fmt.Println(msg)
+		hashCh <- snc.Hash()
+		for hash := range snc.Events() {
+			hashCh <- hash
+		}
 	}
 }
 
