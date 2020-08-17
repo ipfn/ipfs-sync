@@ -17,18 +17,23 @@ import (
 var (
 	verbose = flag.Bool("verbose", false, "Print logs to stderr")
 	nodeURL = flag.String("node-addr", "/ip4/127.0.0.1/tcp/5001/", "IPFS node URL")
-	ipnsKey = flag.String("ipns-key", "", "key to publish to IPNS")
+	ipnsKey = flag.String("ipns-key", "", "IPNS publish key or name")
 
 	// Ignore .git and .gitignore files by default
-	git = flag.Bool("git", true, "Ignores files from .gitignore and .git directory itself.")
+	git = flag.Bool("git", true, "Ignores files from .gitignore and .git directory itself")
 
 	// IPFS ignore rules
 	ignore          stringList
-	ignoreRulesPath = flag.String("ignore-rules-path", "", "Ignores files from .gitignore.")
+	ignoreRulesPath = flag.String("ignore-rules-path", "", "Ignores files from .gitignore")
 )
 
 func init() {
-	flag.Var(&ignore, "ignore", "List of paths to ignore.")
+	flag.Var(&ignore, "ignore", "List of paths to ignore")
+}
+
+func fatal(msg string, v ...interface{}) {
+	fmt.Printf(msg, v...)
+	os.Exit(1)
 }
 
 func main() {
@@ -41,25 +46,25 @@ func main() {
 
 	path := flag.Arg(0)
 	if path == "" {
-		log.Fatal("Usage: ipfs-sync --node-addr=multiaddr <directory>")
+		fatal("Usage: ipfs-sync --node-addr=multiaddr <directory>")
 	}
 
 	if path == "." {
 		var err error
 		if path, err = os.Getwd(); err != nil {
-			log.Fatalf("getwd: %v", err)
+			fatal("Error: getwd: %v", err)
 		}
 	} else {
 		var err error
 		if path, err = filepath.Abs(path); err != nil {
-			log.Fatalf("path error: %v", err)
+			fatal("Error: filepath: %v", err)
 		}
 	}
 
 	log.Printf("Starting in %s", path)
 
 	if _, err := exec.LookPath("ipfs"); err != nil {
-		log.Fatal("Error: ipfs was not found in $PATH")
+		fatal("Error: ipfs was not found in $PATH")
 	}
 
 	_, err := os.Stat(".gitignore")
@@ -76,24 +81,24 @@ func main() {
 		IgnoreRulesPath: *ignoreRulesPath,
 	})
 	if err != nil {
-		log.Fatalf("watch error: %v", err)
+		fatal("Error: watch: %v", err)
+	}
+	fmt.Println(snc.Hash())
+	var pubChan chan string
+
+	if *ipnsKey != "" {
+		pubChan = make(chan string, 1)
+		pubChan <- snc.Hash()
+		if err := shell.Publish(*ipnsKey, pubChan); err != nil {
+			fatal("Publish error: %s\n", err)
+		}
+		log.Printf("Publishing to key: %s", *ipnsKey)
 	}
 
-	if *ipnsKey == "" {
-		fmt.Println(snc.Hash())
-		for hash := range snc.Events() {
-			fmt.Println(hash)
-		}
-	} else {
-		hashCh := make(chan string)
-		msg, err := shell.Publish(*ipnsKey, hashCh)
-		if err != nil {
-			log.Fatalf("Publish error: %s\n", err)
-		}
-		fmt.Println(msg)
-		hashCh <- snc.Hash()
-		for hash := range snc.Events() {
-			hashCh <- hash
+	for hash := range snc.Events() {
+		fmt.Println(hash)
+		if pubChan != nil {
+			pubChan <- hash
 		}
 	}
 }
