@@ -90,7 +90,7 @@ func Publish(key string, hashChan <-chan string) (err error) {
 			}
 			var ctx context.Context
 			ctx, cancel = context.WithCancel(context.Background())
-			cmd := exec.CommandContext(ctx, "name", "publish", fmt.Sprintf("--key=%s", key), hash)
+			cmd := exec.CommandContext(ctx, "ipfs", "name", "publish", fmt.Sprintf("--key=%s", key), hash)
 			if err := cmd.Start(); err != nil {
 				log.Printf("Publish start error: %v", err)
 			}
