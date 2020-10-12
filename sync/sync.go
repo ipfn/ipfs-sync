@@ -21,7 +21,7 @@ type Synchronizer struct {
 }
 
 // Watch - Constructs new IPFS synchronizer for a directory.
-func Watch(url, path string, opts shell.AddOptions) (sync *Synchronizer, err error) {
+func Watch(path string, opts shell.AddOptions) (sync *Synchronizer, err error) {
 	watch, err := rfsnotify.NewWatcher()
 	if err != nil {
 		return nil, fmt.Errorf("rfsnotify: %v", err)

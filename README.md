@@ -18,7 +18,7 @@ $ go get -u github.com/ipfn/ipfs-sync
 ## Usage
 
 ```console
-$ ipfs-sync --node-addr=multiaddr <directory>
+$ ipfs-sync <directory>
 ```
 
 ### Publish to IPNS
@@ -26,7 +26,7 @@ $ ipfs-sync --node-addr=multiaddr <directory>
 ```console
 $ ipfs key list
 $ ipfs key gen myrepo
-$ ipfs-sync --node-addr=multiaddr --ipns-key=myrepo <directory>
+$ ipfs-sync --ipns-key=myrepo <directory>
 ```
 
 ## License

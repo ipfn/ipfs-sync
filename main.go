@@ -16,7 +16,6 @@ import (
 
 var (
 	verbose = flag.Bool("verbose", false, "Print logs to stderr")
-	nodeURL = flag.String("node-addr", "/ip4/127.0.0.1/tcp/5001/", "IPFS node URL")
 	ipnsKey = flag.String("ipns-key", "", "IPNS publish key or name")
 
 	// Ignore .git and .gitignore files by default
@@ -46,7 +45,7 @@ func main() {
 
 	path := flag.Arg(0)
 	if path == "" {
-		fatal("Usage: ipfs-sync --node-addr=multiaddr <directory>")
+		fatal("Usage: ipfs-sync <directory>")
 	}
 
 	if path == "." {
@@ -76,7 +75,7 @@ func main() {
 		ignore = append(ignore, ".git")
 	}
 
-	snc, err := sync.Watch(*nodeURL, path, shell.AddOptions{
+	snc, err := sync.Watch(path, shell.AddOptions{
 		Ignore:          ignore,
 		IgnoreRulesPath: *ignoreRulesPath,
 	})
@@ -84,15 +83,15 @@ func main() {
 		fatal("Error: watch: %v", err)
 	}
 	fmt.Println(snc.Hash())
-	var pubChan chan string
 
+	var pubChan chan string
 	if *ipnsKey != "" {
 		pubChan = make(chan string, 1)
-		pubChan <- snc.Hash()
 		if err := shell.Publish(*ipnsKey, pubChan); err != nil {
 			fatal("Publish error: %s\n", err)
 		}
 		log.Printf("Publishing to key: %s", *ipnsKey)
+		pubChan <- snc.Hash()
 	}
 
 	for hash := range snc.Events() {
