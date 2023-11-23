@@ -5,7 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/farmergreg/rfsnotify"
+	ignore "github.com/crackcomm/go-gitignore"
+	"github.com/crackcomm/rfsnotify"
 
 	"github.com/ipfn/ipfs-sync/shell"
 )
@@ -15,6 +16,8 @@ type Synchronizer struct {
 	path string
 	hash string
 
+	ignoreRules *ignore.GitIgnore
+
 	ops    *Ops
 	watch  *rfsnotify.RWatcher
 	events chan string
@@ -22,18 +25,27 @@ type Synchronizer struct {
 
 // Watch - Constructs new IPFS synchronizer for a directory.
 func Watch(path string, opts shell.AddOptions) (sync *Synchronizer, err error) {
-	watch, err := rfsnotify.NewWatcher()
-	if err != nil {
-		return nil, fmt.Errorf("rfsnotify: %v", err)
-	}
-
 	sync = &Synchronizer{
 		path: path,
 		ops: &Ops{
 			base: strings.ReplaceAll(path, "\\", "/"),
 			opts: opts,
 		},
-		watch: watch,
+	}
+
+	if opts.IgnoreRulesPath == "" {
+		sync.ignoreRules, err = ignore.CompileIgnoreLines(opts.IgnorePaths...)
+	} else {
+		sync.ignoreRules, err = ignore.CompileIgnoreFileAndLines(opts.IgnoreRulesPath, opts.IgnorePaths...)
+	}
+
+	if sync.ignoreRules == nil {
+		sync.watch, err = rfsnotify.NewWatcher()
+	} else {
+		sync.watch, err = rfsnotify.NewWatcherWithIgnore(sync.ignoreRules)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("rfsnotify: %v", err)
 	}
 
 	sync.hash, err = shell.Add(&sync.ops.opts, path)

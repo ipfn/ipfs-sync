@@ -2,7 +2,6 @@ package sync
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"path/filepath"
 	"strings"
@@ -21,12 +20,6 @@ type Ops struct {
 // Handle - Handles file system notification.
 func (ops *Ops) Handle(last string, event fsnotify.Event) (hash string, err error) {
 	path := cleanPath(ops.base, event.Name)
-	for _, ignored := range ops.opts.Ignore {
-		dirpath := fmt.Sprintf("%s/", ignored)
-		if path == ignored || path == dirpath || strings.HasPrefix(path, dirpath) {
-			return last, nil
-		}
-	}
 	log.Printf("File event: %s;%s (%s)", last, path, eventType(event))
 	if event.Op&fsnotify.Create == fsnotify.Create {
 		return ops.Create(last, path)

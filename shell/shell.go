@@ -31,8 +31,8 @@ func Exec(args ...string) (_ string, err error) {
 
 // AddOptions - IPFS shell `add` command options.
 type AddOptions struct {
-	// Ignore - List of paths to ignore.
-	Ignore []string
+	// IgnorePaths - List of paths to ignore.
+	IgnorePaths []string
 	// IgnoreRulesPath - Path of `.gitignore` file or similar.
 	IgnoreRulesPath string
 	// Hidden - Include hidden files.
@@ -48,8 +48,8 @@ func Add(opts *AddOptions, path string) (string, error) {
 	if len(opts.IgnoreRulesPath) != 0 {
 		args = append(args, fmt.Sprintf("--ignore-rules-path=%s", opts.IgnoreRulesPath))
 	}
-	if len(opts.Ignore) != 0 {
-		for _, arg := range opts.Ignore {
+	if len(opts.IgnorePaths) != 0 {
+		for _, arg := range opts.IgnorePaths {
 			args = append(args, fmt.Sprintf("--ignore=%s", arg))
 		}
 	}
