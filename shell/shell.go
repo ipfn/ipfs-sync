@@ -58,12 +58,12 @@ func Add(opts *AddOptions, path string) (string, error) {
 
 // RmLink - Removes link from IPFS object and returns new hash.
 func RmLink(last, path string) (string, error) {
-	return Exec("object", "patch", "rm-link", last, path)
+	return Exec("object", "patch", "rm-link", "--allow-big-block", last, path)
 }
 
 // AddLink - Creates link from IPFS object and returns new hash.
 func AddLink(last, path, hash string) (string, error) {
-	return Exec("object", "patch", "add-link", last, path, hash)
+	return Exec("object", "patch", "add-link", "--allow-big-block", last, path, hash)
 }
 
 func keyExists(key string) bool {
