@@ -89,6 +89,9 @@ func (sync *Synchronizer) watchForEvents() {
 			if err != nil {
 				log.Println("error:", err)
 			}
+			if hash == "" {
+				continue
+			}
 			if sync.events != nil && sync.hash != hash && hash != "" {
 				sync.events <- hash
 			}

@@ -21,19 +21,22 @@ type Ops struct {
 func (ops *Ops) Handle(last string, event fsnotify.Event) (hash string, err error) {
 	path := cleanPath(ops.base, event.Name)
 	log.Printf("File event: %s;%s (%s)", last, path, eventType(event))
-	if event.Op&fsnotify.Create == fsnotify.Create {
+	if event.Op&fsnotify.Create != 0 {
 		return ops.Create(last, path)
 	}
-	if event.Op&fsnotify.Remove == fsnotify.Remove {
+	if event.Op&fsnotify.Remove != 0 {
 		return ops.Remove(last, path)
 	}
-	if event.Op&fsnotify.Write == fsnotify.Write {
+	if event.Op&fsnotify.Write != 0 {
 		return ops.Write(last, path)
 	}
-	if event.Op&fsnotify.Rename == fsnotify.Rename {
+	if event.Op&fsnotify.Rename != 0 {
 		return ops.Rename(last, path)
 	}
-	err = errors.New("unknown error type")
+	if event.Op&fsnotify.Chmod != 0 {
+		return
+	}
+	err = errors.New("unknown event type")
 	return
 }
 
@@ -72,17 +75,20 @@ func cleanPath(base, path string) string {
 }
 
 func eventType(event fsnotify.Event) string {
-	if event.Op&fsnotify.Create == fsnotify.Create {
+	if event.Op&fsnotify.Create != 0 {
 		return "Create"
 	}
-	if event.Op&fsnotify.Remove == fsnotify.Remove {
+	if event.Op&fsnotify.Remove != 0 {
 		return "Remove"
 	}
-	if event.Op&fsnotify.Write == fsnotify.Write {
+	if event.Op&fsnotify.Write != 0 {
 		return "Write"
 	}
-	if event.Op&fsnotify.Rename == fsnotify.Rename {
+	if event.Op&fsnotify.Rename != 0 {
 		return "Rename"
+	}
+	if event.Op&fsnotify.Chmod != 0 {
+		return "Chmod"
 	}
 	return "Unknown"
 }
