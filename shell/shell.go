@@ -35,11 +35,16 @@ type AddOptions struct {
 	Ignore []string
 	// IgnoreRulesPath - Path of `.gitignore` file or similar.
 	IgnoreRulesPath string
+	// Hidden - Include hidden files.
+	Hidden bool
 }
 
 // Add - Adds directory to IPFS and returns its hash.
 func Add(opts *AddOptions, path string) (string, error) {
-	args := []string{"add", "-Q", "-H", "-r"}
+	args := []string{"add", "-Q", "-r"}
+	if opts.Hidden {
+		args = append(args, "-H")
+	}
 	if len(opts.IgnoreRulesPath) != 0 {
 		args = append(args, fmt.Sprintf("--ignore-rules-path=%s", opts.IgnoreRulesPath))
 	}

@@ -24,6 +24,7 @@ var (
 	// IPFS ignore rules
 	ignore          stringList
 	ignoreRulesPath = flag.String("ignore-rules-path", "", "Ignores files from .gitignore")
+	hidden          = flag.Bool("hidden", false, "Include files that are hidden.")
 )
 
 func init() {
@@ -76,7 +77,7 @@ func main() {
 	}
 
 	snc, err := sync.Watch(path, shell.AddOptions{
-		Ignore:          ignore,
+		IgnorePaths:     ignore,
 		IgnoreRulesPath: *ignoreRulesPath,
 	})
 	if err != nil {
