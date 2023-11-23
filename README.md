@@ -18,7 +18,7 @@ $ go get -u github.com/ipfn/ipfs-sync
 ## Usage
 
 ```console
-$ ipfs-sync <directory>
+$ ipfs-sync --ignore-rules-path=.gitignore  .
 ```
 
 ### Publish to IPNS
